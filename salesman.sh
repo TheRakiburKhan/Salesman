@@ -1,20 +1,24 @@
 #!/bin/bash
 
-#................................"Create Event" Option.............................
-function cr_eve
+#................................"Add Delivery Task" Option.............................
+function add_delivery
 {
 
 MYSQL=`which mysql`
 
-yad --form --center --field="Event Date":DT --field="Event Description" --title "Create Event" --text "Create New Event Here:" --date-format="%Y-%m-%d" --button="Create":0 --button=gtk-cancel:1 > /tmp/entries 
+yad --form --height 700 --width 600 --center --field="Customer Name" --field="Customer Address" --field="Phone" --field="Product Details" --field="Payment" --field="Delivery Date":DT --title "Add Deliery Task" --text "Add new delivery task here:" --date-format="%Y-%m-%d" --button="Add":0 --button=gtk-cancel:1 > /tmp/entries 
 
-date_input=`cut -d "|" -f 1 /tmp/entries`
-eve=`cut -d "|" -f 2 /tmp/entries`
+cus_name=`cut -d "|" -f 1 /tmp/entries`
+cus_address=`cut -d "|" -f 2 /tmp/entries`
+cus_phone=`cut -d "|" -f 3 /tmp/entries`
+product_details=`cut -d "|" -f 4 /tmp/entries`
+payment=`cut -d "|" -f 5 /tmp/entries`
+date_input=`cut -d "|" -f 6 /tmp/entries`
 
 
-a=`$MYSQL test -u test -Bse "SELECT MAX(id) FROM events"`
+a=`$MYSQL salesman -u personalproject -Bse "SELECT MAX(order_id) FROM customer"`
 a=$(($a+1))
-$MYSQL test -u test -e "INSERT INTO events VALUES ($a, '$date_input','$eve');"
+$MYSQL salesman -u personalproject -e "INSERT INTO customer VALUES ($a, '$cus_name', '$cus_address', '$cus_phone', '$product_details', '$payment', '$date_input');"
    
 if [ $? -eq 0 ]
 then
@@ -29,14 +33,14 @@ fi
 
 
 
-#.............................Check Today's Events Option...............................................
-function show_eve
+#.............................Today's delivery list Option...............................................
+function delivery_list
 {
 
 today_date=`date -I`
 MYSQL=`which mysql`
 
-$MYSQL test -u test -Ne "SELECT event_desc FROM events WHERE date='$today_date'"|tr '\t' '\n'|yad --center --width 300 --height 200 --text-info --justify="CENTER" --fontname="luxi-serif" --title "Today's($today_date) Events" > /tmp/entries 
+$MYSQL salesman -u personalproject -Ne "SELECT order_id, cus_name, cus_address, cus_phone, payment  FROM customer WHERE delivery='$today_date'"|tr '\t' '\n'|yad --center --width 1280 --height 720 --text-info --justify="CENTER" --fontname="luxi-serif" --list --no-selection--grid-lines="VERTICAL" --column "Order no." --column "       Customer Name         " --column "                           Address                             " --column "      Phone     " --column "         Payment       " --title "Today's($today_date) Delivery" > /tmp/entries 
 }
 #........................................................................................................
 
@@ -44,11 +48,11 @@ $MYSQL test -u test -Ne "SELECT event_desc FROM events WHERE date='$today_date'"
 
 
 #.................................."Next" Option (in Filtered Event).......................................
-function next_eve
+function next_delivery
 {
 
 MYSQL=`which mysql`
-$MYSQL test -u test -Ne "SELECT date, event_desc FROM events WHERE date >= CURDATE() ORDER BY date"|tr '\t' '\n'|yad --center --list --no-selection--grid-lines="VERTICAL" --column "Date		" --column "Event"   --title "Next Events" --height 300 --width 300 --button="Back":3 > /tmp/entries
+$MYSQL salesman -u personalproject -Ne "SELECT order_id, delivery, cus_name, cus_address, cus_phone, payment FROM customer WHERE delivery >= CURDATE() ORDER BY delivery"|tr '\t' '\n'|yad --center --list --no-selection--grid-lines="VERTICAL" --column "Order no." --column "      Date		" --column "          Customer Name         " --column "                        Address                             " --column "      Phone     " --column "       Payment       " --title "Next customer" --height 720 --width 1280 --button="Back":3 > /tmp/entries
 
 if [ $? -eq 3 ]
 then
@@ -62,33 +66,45 @@ fi
 
 
 
-#................................"Edit Event" Option.........................................................
-function all_eve
+#................................"Edit entry" Option.........................................................
+function all_delivery
 {
 
 MYSQL=`which mysql`
-$MYSQL test -u test -Ne "SELECT id, date, event_desc FROM events ORDER BY date"|tr '\t' '\n'|yad --center --list --column "ID	" --column "Date		" --column "Event" --text "" --title "Edit Current Events" --height 300 --width 300 --button="gtk-edit":0 --button="gtk-delete":2 --button="Back":3 --hide-column=1 > /tmp/entries
+$MYSQL salesman -u personalproject -Ne "SELECT order_id, delivery, cus_name, cus_address, cus_phone, product_details, payment FROM customer ORDER BY delivery"|tr '\t' '\n'|yad --center --list --column "Order no." --column "     Date     " --column "        Customer Name        " --column "                         Address                         " --column "   Phone  " --column "             Product Description              " --column "         Payment       " --text "" --title "Edit Current customer" --height 720 --width 720 --button="gtk-edit":0 --button="gtk-delete":2 --button="Back":3 --hide-column=1 > /tmp/entries
 
 button_choice=$?
 
-ide=`cut -d "|" -f 1 /tmp/entries`
+oid=`cut -d "|" -f 1 /tmp/entries`
 date_input=`cut -d "|" -f 2 /tmp/entries`
-eve=`cut -d "|" -f 3 /tmp/entries`
+cus_name=`cut -d "|" -f 3 /tmp/entries`
+cus_address=`cut -d "|" -f 4 /tmp/entries`
+cus_phone=`cut -d "|" -f 5 /tmp/entries`
+product_details=`cut -d "|" -f 6 /tmp/entries`
+payment=`cut -d "|" -f 7 /tmp/entries`
 
 
 if [ $button_choice -eq 0 ]
 then
-   yad --center --form --field="Event Date":DT --field="Event Description" "$date_input" "$eve" --title "Update Event" --text "Update Event Here:" --date-format="%Y-%m-%d" --button="Update":0 --button=gtk-cancel:1 > /tmp/entries
+   yad --height 720 --width 1280 --center --form --field="Date":DT --field="Customer Name" --field="Address" --field="Phone" --field="Product Description" --field="Payment" "$date_input" "$cus_name" "$cus_address" "$cus_phone" "$product_details" "$payment" --title "Update entry" --text "Update entry Here:" --date-format="%Y-%m-%d" --button="Update":0 --button=gtk-cancel:1 > /tmp/entries
    update_choice=$?
 
 
    date_update=`cut -d "|" -f 1 /tmp/entries`
-   eve_update=`cut -d "|" -f 2 /tmp/entries`
+   name_update=`cut -d "|" -f 2 /tmp/entries`
+   address_update=`cut -d "|" -f 3 /tmp/entries`
+   phone_update=`cut -d "|" -f 4 /tmp/entries`
+   product_update=`cut -d "|" -f 5 /tmp/entries`
+   payment_update=`cut -d "|" -f 6 /tmp/entries`
    
    if [[ $? -eq 0 && $update_choice -eq 0 ]]
    then
-       $MYSQL test -u test -e "UPDATE events SET date='$date_update' WHERE id=$ide"
-       $MYSQL test -u test -e "UPDATE events SET event_desc='$eve_update' WHERE id=$ide"
+       $MYSQL salesman -u personalproject -e "UPDATE customer SET delivery='$date_update' WHERE order_id=$oid"
+       $MYSQL salesman -u personalproject -e "UPDATE customer SET cus_name='$name_update' WHERE order_id=$oid"
+       $MYSQL salesman -u personalproject -e "UPDATE customer SET cus_address='$address_update' WHERE order_id=$oid"
+       $MYSQL salesman -u personalproject -e "UPDATE customer SET cus_phone='$phone_update' WHERE order_id=$oid"
+       $MYSQL salesman -u personalproject -e "UPDATE customer SET product_details='$product_update' WHERE order_id=$oid"
+       $MYSQL salesman -u personalproject -e "UPDATE customer SET payment='$payment_update' WHERE order_id=$oid"
        yad --center --width=300 --height=50 --image="gtk-info" --text="\nData Updated Successfully" --no-buttons
    else
        yad --center --width=300 --height=50 --image="gtk-dialog-error" --text="\nProblem in Updating Data" --no-buttons
@@ -96,7 +112,7 @@ then
 elif [ $button_choice -eq 2 ]
 then 
    
-   $MYSQL test -u test -e "DELETE FROM events WHERE id=$ide"
+   $MYSQL salesman -u personalproject -e "DELETE FROM customer WHERE order_id=$oid"
    
    if [ $? -eq 0 ]
    then
@@ -115,11 +131,11 @@ fi
 
 
 #......................................"This Month" Option (in Filtered Event)................................
-function monthly_eve
+function this_month
 {
 
 MYSQL=`which mysql`
-$MYSQL test -u test -Ne "SELECT date, event_desc FROM events WHERE MONTH(date) = MONTH(CURDATE()) ORDER BY date"|tr '\t' '\n'|yad --center --list --no-selection--grid-lines="VERTICAL" --column "Date		" --column "Event"   --title "This Month Events" --height 300 --width 300 --button="Back":3 > /tmp/entries
+$MYSQL salesman -u personalproject -Ne "SELECT order_id, delivery, cus_name, cus_address, cus_phone, payment FROM customer WHERE MONTH(delivery) = MONTH(CURDATE()) ORDER BY delivery"|tr '\t' '\n'|yad --center --list --no-selection--grid-lines="VERTICAL" --column "Order no." --column "Date		" --column "Customer Name         " --column "Address                             " --column "Phone     " --column "Payment       " --title "This Month customer" --height 720 --width 1280 --button="Back":3 > /tmp/entries
 
 if [ $? -eq 3 ]
 then
@@ -134,11 +150,11 @@ fi
 
 
 #................................"This Year" Option (in filtered event).....................................
-function yearly_eve
+function this_year
 {
 
 MYSQL=`which mysql`
-$MYSQL test -u test -Ne "SELECT date, event_desc FROM events WHERE YEAR(date) = YEAR(CURDATE()) ORDER BY date"|tr '\t' '\n'|yad --center --list --no-selection--grid-lines="VERTICAL" --column "Date		" --column "Event"   --title "This Year Events" --height 300 --width 300 --button="Back":3 > /tmp/entries
+$MYSQL salesman -u personalproject -Ne "SELECT order_id, delivery, cus_name, cus_address, cus_phone, payment FROM customer WHERE YEAR(delivery) = YEAR(CURDATE()) ORDER BY delivery"|tr '\t' '\n'|yad --center --list --no-selection--grid-lines="VERTICAL" --column "Order no." --column "       Date		" --column "            Customer Name           " --column "                             Address                               " --column "       Phone       " --column "             Payment         " --title "This Year customer" --height 720 --width 1280 --button="Back":3 > /tmp/entries
 
 if [ $? -eq 3 ]
 then
@@ -155,16 +171,16 @@ fi
 function inner_option
 {
  
-yad --center --width 250 --height 250 --list --text "Select an Option:" --title "Choose to Filter" --radiolist --column "SELECT" --column "OPTION" TRUE "Next" FALSE "This Month" FALSE "This Year" FALSE "Back" --button="Choose":0 --button="gtk-cancel":1 > /tmp/entries 
+yad --center --width 300 --height 300 --list --text "Select your desired range of time:" --title "Choose to Filter" --radiolist --column "SELECT" --column "OPTION" TRUE "Next" FALSE "This Month" FALSE "This Year" FALSE "Back" --button="Find":0 --button="gtk-cancel":1 > /tmp/entries 
 op=`cut -d "|" -f 2 /tmp/entries`
 
 case "${op}" in
     "This Month" )
-           monthly_eve;;
+           this_month;;
     "This Year" )
-           yearly_eve;;
+           this_year;;
     "Next")
-           next_eve;;
+           next_delivery;;
     "Back")
            continue;;
 esac
@@ -175,21 +191,22 @@ esac
 
 
 #..........................................Main Menu.........................................................
+
 while true
 do
 
- yad --center --width 250 --height 250 --list --text "Select an Option:" --title "Main Menu" --radiolist --column "SELECT" --column "OPTION" TRUE "Create Event" FALSE "Check Today's Event" FALSE "Filtered Event" FALSE "Edit Event" FALSE "Exit" --no-selection --button="Choose":0 --button="gtk-cancel":1 > /tmp/entries
+ yad --center --width 300 --height 300 --list --text "Select an Option:" --title "Main Menu" --radiolist --column "SELECT" --column "OPTION" TRUE "Add Delivery Task" FALSE "Today's Delivery List" FALSE "Check Delivery list" FALSE "Edit Entry" FALSE "Exit" --no-selection --button="Choose":0 --button="gtk-cancel":1 > /tmp/entries
 choice=`cut -d "|" -f 2 /tmp/entries`
 
     case "${choice}" in
-       "Create Event" )
-             cr_eve;;
-       "Check Today's Event" )
-             show_eve;;
-       "Filtered Event")
+       "Add Delivery Task" )
+             add_delivery;;
+       "Today's Delivery List" )
+             delivery_list;;
+       "Check Delivery list")
              inner_option;;
-       "Edit Event")
-           all_eve;;
+       "Edit Entry")
+           all_delivery;;
         *)
             break;;
      esac

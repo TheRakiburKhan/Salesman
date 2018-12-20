@@ -2,7 +2,7 @@
 MYSQL=`which mysql`
 
 #dbs=
-$MYSQL salesman -u personalproject -e 'CREATE TABLE events(id int not null, date DATE, event_desc varchar(50), primary key(id));'
+$MYSQL salesman -u personalproject -e 'CREATE TABLE customer(order_id int not null, cus_name varchar(45) not null, cus_address varchar(80) not null, cus_phone varchar(15) not null, primary key (cus_id));'
 
 if [ $? -eq 0 ]
 then
