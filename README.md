@@ -1,7 +1,7 @@
 # Salesman
 Simple program for a sales delivery guy where he can add his daily tasks and keep a track of it
 
-#Installation
+## Installation
 
 Configuration of MySQL:
   1. Server encryption MUST BE in 5.x version compatible
@@ -11,7 +11,7 @@ Configuration of MySQL:
 
 This project is a basic UI project where YAD is an UI creation tool and MySQL script is the background database tool and Linux Bash is the core command script.
 
-#Features
+## Features
 1. Adding delivery entry
 2. View todays delivery task sorted by delivery status (descending)
 3. View tasks using filters
